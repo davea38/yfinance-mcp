@@ -1,0 +1,34 @@
+[project]
+name = "yahoo-finance-mcp"
+version = "0.1.0"
+description = "MCP server providing comprehensive Yahoo Finance data access including stock prices, financial statements, market analysis, and more"
+readme = "README.md"
+authors = [
+    { name = "everdeep", email = "sebbird10@gmail.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "mcp[cli]>=1.0.0",
+    "yfinance>=0.2.49",
+    "pandas>=2.0.0",
+    "pydantic>=2.0.0",
+]
+
+[project.scripts]
+yahoo-finance-mcp = "server:main"
+
+[tool.setuptools]
+py-modules = ["server", "utils", "models"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
