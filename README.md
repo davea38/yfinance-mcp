@@ -195,7 +195,7 @@ This opens a web interface where you can test all the tools interactively.
 
 ```bash
 # Run the server
-uv run yahoo-finance-mcp
+uv run yahoo-finance-mcp --http --port 8080
 ```
 
 ## Tool Examples

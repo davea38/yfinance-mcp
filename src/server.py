@@ -197,7 +197,32 @@ def compare_stocks(tickers: List[str]) -> Dict[str, Any]:
 
 def main():
     """Main entry point for the MCP server."""
-    mcp.run()
+    import sys
+
+    # Check for HTTP mode via command line args
+    if "--http" in sys.argv or "--sse" in sys.argv:
+        import uvicorn
+
+        port = 8080
+        host = "0.0.0.0"
+        # Check for custom port/host
+        for i, arg in enumerate(sys.argv):
+            if arg == "--port" and i + 1 < len(sys.argv):
+                port = int(sys.argv[i + 1])
+            if arg == "--host" and i + 1 < len(sys.argv):
+                host = sys.argv[i + 1]
+
+        if "--http" in sys.argv:
+            print(f"Starting Streamable HTTP server on http://{host}:{port}/mcp")
+            app = mcp.streamable_http_app()
+        else:
+            print(f"Starting SSE server on http://{host}:{port}/sse")
+            app = mcp.sse_app()
+
+        uvicorn.run(app, host=host, port=port)
+    else:
+        # Default: stdio transport for local MCP clients
+        mcp.run()
 
 
 if __name__ == "__main__":
