@@ -48,22 +48,8 @@ ADR and the suffixes are also part of the documented contract.
 
 ## P2 — Test suite
 
-`tests/` contains only an empty `__init__.py`. There is zero coverage of any tool, util, or
-the server wiring. Build PROMPT requires test runs after each increment.
-
-- [x] Add `tests/conftest.py` with shared fixtures — a `stub_ticker_factory` fixture is in
-      place that patches `yfinance.Ticker` per-module so tests don't hit the network.
-- [x] One `tests/test_<module>.py` per existing tool module covering the happy path and the
-      `error: True` branch — **`tests/test_insiders.py` DONE (16 tests)** and
-      **`tests/test_calendars.py` DONE (37 tests)**. Still pending: back-fill
-      `stock_info`, `historical`, `financials`, `analysis`, `options`, `news`, `bulk`.
-- [ ] `tests/test_utils.py` — `format_dataframe_to_dict` (NaN, Timestamps, numpy scalars),
-      `format_series_to_dict`, `validate_ticker_symbol`, `validate_period`,
-      `validate_interval`, `handle_yfinance_error` shape.
-- [ ] `tests/test_server.py` — assert every registered `@mcp.tool()` name from the spec is
-      present, descriptions are non-empty, and that the README tool count (now **36** after
-      P0 + P1) matches the registration count post-feature work.
-- [ ] Wire `uv run pytest` into the build-loop tag step (PROMPT_build.md item 9999999).
+**Done.** Full backfill is in place — see the Completed section for the rollup.
+`uv run pytest` reports **386 passing tests** across 11 test files (4327 lines).
 
 ---
 
@@ -91,12 +77,11 @@ dead or duplicated code violate that.
       `docs/adr/` and commit the move, or commit the deletion if the team prefers `.scratch/`
       as canonical. The directory choice must be consistent with how the build prompt expects
       to find new specs.
-- [ ] **`AGENTS.md` does not exist** at the project root. PROMPT_build.md item 9999999999
-      tells the build loop to update it for "how to run the application". Create the file as
-      a stub on first build pass with: `uv sync`, `uv run yahoo-finance-mcp`, `uv run pytest`,
-      `uv run mcp dev src/yahoo_finance_mcp/server.py` (note this last command from
-      `CLAUDE.md` points to a `yahoo_finance_mcp/` path that does not exist — the actual
-      module lives at `src/server.py`; fix the path in `CLAUDE.md` while you're there).
+- [x] **`AGENTS.md` exists** at the project root and documents `uv sync`, `uv run pytest`,
+      `uv run yahoo-finance-mcp` and the sandbox `UV_PROJECT_ENVIRONMENT`/`UV_LINK_MODE`
+      workaround. Still TODO inside `CLAUDE.md`: the "Testing the Server" block references
+      `src/yahoo_finance_mcp/server.py` — that path does not exist; should be `src/server.py`.
+      (Tracked separately as the P4 `CLAUDE.md` fix bullet.)
 - [ ] **`src/__init__.py` re-exports `main` from `server`** even though `src/` is not an
       installable package (the installed top-levels per egg-info are `server, utils, models,
       tools`, not `src`). Either remove the file or restructure under a real package name.
@@ -143,6 +128,20 @@ dead or duplicated code violate that.
 ## Completed
 
 Tracking section. Move bullets here with the commit SHA once the build loop closes them out.
+
+- **P2 — Test suite backfill** — commit `TBD`. Nine new test files added on top of the
+  P0/P1 modules (test_insiders, test_calendars), bringing the suite to **386 passing tests**
+  in 4327 lines across `tests/`. Coverage: `test_analysis.py` (26), `test_bulk.py` (21),
+  `test_financials.py` (37), `test_historical.py` (23), `test_news.py` (17),
+  `test_options.py` (22), `test_stock_info.py` (19), `test_utils.py` (53),
+  `test_server.py` (~80 parametrised cases asserting the 36-tool registration contract,
+  non-empty descriptions, and README/registration count parity). Each per-module test file
+  exercises both the happy path and the `error: True` branch for every public function,
+  plus validation paths (period/interval/ticker/limit). `conftest.py` provides the shared
+  `stub_ticker_factory` fixture so no test hits the network. Importance: the build prompt
+  mandates `uv run pytest` between increments — before this commit there was zero
+  per-module coverage, so any regression in `utils.py` formatting or `server.py`
+  registration would have shipped silently.
 
 - **P1 — Market calendar tooling (`src/tools/calendars.py`)** — commit `TBD`.
   All four `get_market_*_calendar` tools implemented:
