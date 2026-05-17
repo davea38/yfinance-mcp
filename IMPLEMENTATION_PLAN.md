@@ -129,7 +129,7 @@ dead or duplicated code violate that.
 
 Tracking section. Move bullets here with the commit SHA once the build loop closes them out.
 
-- **P2 — Test suite backfill** — commit `TBD`. Nine new test files added on top of the
+- **P2 — Test suite backfill** — commit `d4e85a1` (tag `0.0.3`). Nine new test files added on top of the
   P0/P1 modules (test_insiders, test_calendars), bringing the suite to **386 passing tests**
   in 4327 lines across `tests/`. Coverage: `test_analysis.py` (26), `test_bulk.py` (21),
   `test_financials.py` (37), `test_historical.py` (23), `test_news.py` (17),
