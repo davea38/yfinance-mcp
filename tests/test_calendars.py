@@ -255,11 +255,26 @@ class TestIpoCalendar:
         sig = inspect.signature(calendars.get_market_ipo_calendar)
         assert list(sig.parameters) == ["days"]
 
+    def test_calendars_constructed_with_window(self):
+        """Forward-only window is load-bearing per the ADR — a regression that
+        passed a historical window would silently return stale events."""
+        FakeCalendars.next_frame = pd.DataFrame()
+        calendars.get_market_ipo_calendar(days=21)
+        today = date.today()
+        assert FakeCalendars.last.start == today.isoformat()
+        assert FakeCalendars.last.end == (today + timedelta(days=21)).isoformat()
+
     def test_error_path(self):
         FakeCalendars.raise_error = RuntimeError("boom")
         out = calendars.get_market_ipo_calendar()
         assert out["error"] is True
         assert out["operation"] == "fetching market IPO calendar"
+
+    @pytest.mark.parametrize("bad", [0, -1, "7", 1.5, True])
+    def test_days_validation(self, bad):
+        out = calendars.get_market_ipo_calendar(days=bad)
+        assert out["error"] is True
+        assert "days" in out["message"]
 
 
 # ---------------------------------------------------------------------------
@@ -286,11 +301,24 @@ class TestSplitsCalendar:
         sig = inspect.signature(calendars.get_market_splits_calendar)
         assert list(sig.parameters) == ["days"]
 
+    def test_calendars_constructed_with_window(self):
+        FakeCalendars.next_frame = pd.DataFrame()
+        calendars.get_market_splits_calendar(days=10)
+        today = date.today()
+        assert FakeCalendars.last.start == today.isoformat()
+        assert FakeCalendars.last.end == (today + timedelta(days=10)).isoformat()
+
     def test_error_path(self):
         FakeCalendars.raise_error = RuntimeError("boom")
         out = calendars.get_market_splits_calendar()
         assert out["error"] is True
         assert out["operation"] == "fetching market splits calendar"
+
+    @pytest.mark.parametrize("bad", [0, -1, "7", 1.5, True])
+    def test_days_validation(self, bad):
+        out = calendars.get_market_splits_calendar(days=bad)
+        assert out["error"] is True
+        assert "days" in out["message"]
 
 
 # ---------------------------------------------------------------------------
@@ -321,6 +349,13 @@ class TestEconomicCalendar:
         out = calendars.get_market_economic_calendar()
         assert out["error"] is True
         assert out["operation"] == "fetching market economic calendar"
+
+    def test_calendars_constructed_with_window(self):
+        FakeCalendars.next_frame = pd.DataFrame()
+        calendars.get_market_economic_calendar(days=5)
+        today = date.today()
+        assert FakeCalendars.last.start == today.isoformat()
+        assert FakeCalendars.last.end == (today + timedelta(days=5)).isoformat()
 
     @pytest.mark.parametrize("bad", [0, -1, "7", 1.5, True])
     def test_days_validation(self, bad):

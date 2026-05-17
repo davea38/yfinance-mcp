@@ -184,7 +184,9 @@ def get_outsized_insider_transactions(
         ``insider_current_holdings`` and ``holdings_pct_change``. Rows in
         ``full_liquidations`` have ``insider_current_holdings == 0`` and
         ``holdings_pct_change is None`` — the ratio is undefined because the
-        actor is no longer on the roster.
+        actor is no longer on the roster. The liquidations bucket is
+        ordered by date desc, then absolute dollar value desc, so the LLM
+        sees the freshest / loudest exit first.
 
         If ``insider_roster_holders`` is empty an error response directs the
         LLM to ``get_insider_transactions`` for the raw log.
@@ -299,6 +301,20 @@ def get_outsized_insider_transactions(
                 else 0.0,
                 reverse=True,
             )
+
+        # `full_liquidations` shares no natural primary sort with `outsized`
+        # (the ratio is undefined by definition), so we sort by recency, then
+        # by absolute dollar value as the tiebreaker. Without an explicit
+        # order an LLM consumer would see arbitrary iteration order — the
+        # spec frames liquidations as "the loudest possible signal", so the
+        # bucket must be deterministically presented.
+        full_liquidations.sort(
+            key=lambda r: (
+                r["date"] or "",
+                abs(r["value"]) if r.get("value") is not None else 0.0,
+            ),
+            reverse=True,
+        )
 
         return {
             "ticker": ticker,

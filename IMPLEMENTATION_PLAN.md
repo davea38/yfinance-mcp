@@ -100,6 +100,47 @@ The build PROMPT mandates *"Single sources of truth, no migrations/adapters."*
 
 ---
 
+## P5 — Polish (post-spec quality items)
+
+Items surfaced by a spec-vs-implementation review on 2026-05-17. None of them
+are spec violations; all four spec features pass their tests as-is. These are
+*determinism* and *coverage* gaps worth tightening so future regressions can't
+land silently.
+
+- [x] **`full_liquidations` returned in arbitrary order.** Resolved — bucket
+      now sorts by date desc, then abs(value) desc as tiebreaker. Spec frames
+      liquidations as "the loudest possible signal", and the LLM consumer
+      can't act on that framing if the order is dictated by pandas iteration.
+      Test `test_full_liquidations_sorted_by_date_then_value` regression-locks
+      the ordering.
+- [x] **Calendar test gaps.** Resolved — `TestIpoCalendar` and
+      `TestSplitsCalendar` now have `days` validation parametrize tests
+      (matching `TestEarningsCalendar` / `TestEconomicCalendar`), and
+      `TestIpoCalendar`, `TestSplitsCalendar`, `TestEconomicCalendar` each
+      have a `test_calendars_constructed_with_window` test asserting the
+      forward-only window the ADR mandates. Previously only the earnings
+      tool was guarded against a passed-window regression.
+
+---
+
+## Open observations (no action — not bugs)
+
+- **Insider with zero direct holdings on the roster.** Code at
+  `src/tools/insiders.py:282–288` routes a roster member with
+  `Shares Owned Directly == 0` to `outsized_transactions` with
+  `holdings_pct_change = None`. The spec defines `full_liquidations` as
+  "absent from `insider_roster_holders`", so the current routing is
+  spec-correct; flagged here only so a future spec amendment can decide
+  whether zero-holdings-on-roster should reclassify to the liquidations
+  bucket.
+- **Timezone-naive cutoff vs. Yahoo's `Start Date` column.** The lookback
+  cutoff at `insiders.py:227` constructs a tz-naive Timestamp; if Yahoo
+  ever ships a tz-aware `Start Date`, the `>=` comparison would raise. The
+  current tests pass tz-naive Timestamps, and the live AAPL feed is also
+  tz-naive, so this is latent — flagged here in case it ever fires.
+
+---
+
 ## Out of scope (do not implement without a new spec)
 
 - Anything proposed in CONTEXT.md "Considered and rejected" sections of either ADR — e.g.

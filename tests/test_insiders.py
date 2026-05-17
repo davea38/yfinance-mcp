@@ -351,3 +351,35 @@ def test_outsized_rejects_non_positive_lookback(
     )
     assert insiders.get_outsized_insider_transactions("AAPL", lookback_days=0)["error"]
     assert insiders.get_outsized_insider_transactions("AAPL", top_n=0)["error"]
+
+
+def test_full_liquidations_sorted_by_date_then_value(
+    stub_ticker_factory, sample_roster
+):
+    """`full_liquidations` must come back in deterministic order — date desc,
+    abs(value) desc as tiebreaker. Without an explicit sort an LLM consumer
+    sees arbitrary iteration order, which defeats the spec's framing of
+    liquidations as "the loudest possible signal" the bucket is meant to
+    surface."""
+    rows = _make_txns(
+        [
+            # Same recent date, smaller value (should rank below the larger one).
+            [200, 2_000.0, "", "", "GHOST OLD", "Officer", "Sale", pd.Timestamp("2026-05-10"), "D"],
+            # Older date, very large value (recency wins over magnitude).
+            [10_000, 10_000_000.0, "", "", "GHOST ANCIENT", "Officer", "Sale", pd.Timestamp("2026-04-01"), "D"],
+            # Most recent + largest value — must rank first.
+            [5_000, 5_000_000.0, "", "", "GHOST FRESH", "Officer", "Sale", pd.Timestamp("2026-05-12"), "D"],
+            # Same recent date as GHOST OLD, larger value — outranks GHOST OLD on tiebreaker.
+            [400, 4_000.0, "", "", "GHOST TIE", "Officer", "Sale", pd.Timestamp("2026-05-10"), "D"],
+        ]
+    )
+    stub_ticker_factory(
+        insiders,
+        {
+            "insider_transactions": rows,
+            "insider_roster_holders": sample_roster,
+        },
+    )
+    result = insiders.get_outsized_insider_transactions("AAPL", lookback_days=10_000)
+    names = [r["name"] for r in result["full_liquidations"]]
+    assert names == ["GHOST FRESH", "GHOST TIE", "GHOST OLD", "GHOST ANCIENT"]
