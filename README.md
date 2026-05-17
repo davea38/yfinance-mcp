@@ -229,7 +229,7 @@ Test the server using the MCP inspector:
 
 ```bash
 # Run in development mode
-uv run mcp dev src/yahoo_finance_mcp/server.py
+uv run mcp dev src/server.py
 ```
 
 This opens a web interface where you can test all the tools interactively.
@@ -382,22 +382,21 @@ download_multiple(
 ```
 yahoo-finance-mcp/
 ├── src/
-│   └── yahoo_finance_mcp/
-│       ├── __init__.py           # Package initialization
-│       ├── server.py             # Main MCP server with tool registration
-│       ├── models.py             # Pydantic models for validation
-│       ├── utils.py              # Helper functions and utilities
-│       └── tools/
-│           ├── __init__.py
-│           ├── stock_info.py    # Stock information tools
-│           ├── historical.py    # Historical data tools
-│           ├── financials.py    # Financial statement tools
-│           ├── analysis.py      # Market analysis tools
-│           ├── options.py       # Options data tools
-│           ├── news.py          # News and insights tools
-│           └── bulk.py          # Bulk operations tools
-├── tests/
-│   └── test_tools.py
+│   ├── server.py                 # FastMCP server with @mcp.tool() registrations
+│   ├── utils.py                  # Validation, formatting, error helpers
+│   └── tools/
+│       ├── __init__.py
+│       ├── stock_info.py         # Company info, prices, holders
+│       ├── historical.py         # Price history, dividends, splits
+│       ├── financials.py         # Income statement, balance sheet, cash flow
+│       ├── analysis.py           # Analyst recommendations, earnings, targets
+│       ├── options.py            # Options chains, calls, puts, expirations
+│       ├── news.py               # News articles, upgrades/downgrades
+│       ├── bulk.py               # Multi-ticker operations
+│       ├── insiders.py           # Insider transactions, purchases, roster, outsized ranking
+│       └── calendars.py          # Market-wide earnings / IPO / splits / economic calendars
+├── tests/                        # Per-module pytest suites + conftest stubs
+├── docs/adr/                     # Accepted architecture decision records
 ├── pyproject.toml
 ├── README.md
 └── .gitignore

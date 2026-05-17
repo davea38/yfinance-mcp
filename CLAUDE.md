@@ -18,7 +18,7 @@ Yahoo Finance MCP Server - A Model Context Protocol server providing 30 tools fo
 ### Testing the Server
 ```bash
 # Interactive development mode with web UI
-uv run mcp dev src/yahoo_finance_mcp/server.py
+uv run mcp dev src/server.py
 
 # Run as standalone server (stdio mode)
 uv run yahoo-finance-mcp
@@ -30,16 +30,16 @@ uv run yahoo-finance-mcp
 uv run pytest
 
 # Run with coverage
-uv run pytest --cov=yahoo_finance_mcp
+uv run pytest --cov=server --cov=utils --cov=tools
 
 # Run specific test file
-uv run pytest tests/test_tools.py
+uv run pytest tests/test_insiders.py
 ```
 
 ### Code Validation
 ```bash
 # Import validation
-uv run python -c "from yahoo_finance_mcp import server; print('✓ Imports successful')"
+uv run python -c "import server; print('✓ Imports successful')"
 ```
 
 ## Architecture

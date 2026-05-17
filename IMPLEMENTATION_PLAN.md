@@ -55,63 +55,52 @@ ADR and the suffixes are also part of the documented contract.
 
 ## P3 — Cleanup / single source of truth
 
-The build PROMPT mandates *"Single sources of truth, no migrations/adapters."* Two pieces of
-dead or duplicated code violate that.
+The build PROMPT mandates *"Single sources of truth, no migrations/adapters."*
 
-- [ ] **`src/models.py` is orphaned.** Pydantic models (`StockInfoResponse`,
-      `HistoricalDataRequest`, `FinancialStatementRequest`, `OptionsRequest`, `NewsItem`,
-      `AnalystRecommendation`, `ErrorResponse`) are not imported by `server.py`, any module
-      in `tools/`, or `utils.py` (grep confirmed: `models` only appears as the file itself).
-      Either wire them into the tool responses for type contracts or delete the file. Note
-      that `pyproject.toml` declares `py-modules = ["server", "utils", "models"]` and the
-      egg-info `top_level.txt` lists `models` — these references must be removed alongside
-      the file if we delete.
-- [ ] **Period/interval validation duplicated.** `src/utils.py:132-175` and
-      `src/models.py:38-50` carry the same `valid_periods` / `valid_intervals` lists.
-      Whichever side survives the models decision, deduplicate the lists.
+- [x] **`src/models.py` is orphaned.** **Resolved** — file deleted; survey confirmed zero
+      imports anywhere in `src/`, `tests/`, or docs. `valid_periods`/`valid_intervals` lists
+      were byte-identical between `utils.py` and `models.py`, so duplication self-resolved
+      on deletion. `pyproject.toml` `py-modules` and the regenerated egg-info `top_level.txt`
+      no longer mention `models`.
+- [x] **Period/interval validation duplicated.** **Resolved** — only duplicate site was
+      `models.py`, removed above.
 - [ ] **`docs/adr/` is empty; ADRs sit in `.scratch/`.** Git status shows
       `D docs/adr/0001-outsized-insider-transactions-ranking.md` and
       `D docs/adr/0002-market-vs-company-calendar.md` — both files are present at
-      `.scratch/<feature>/0001-*.md` with `Status: accepted`. Accepted ADRs should live in
-      `docs/adr/`, not `.scratch/` (scratch is for in-progress work). Either restore them to
-      `docs/adr/` and commit the move, or commit the deletion if the team prefers `.scratch/`
-      as canonical. The directory choice must be consistent with how the build prompt expects
-      to find new specs.
-- [x] **`AGENTS.md` exists** at the project root and documents `uv sync`, `uv run pytest`,
-      `uv run yahoo-finance-mcp` and the sandbox `UV_PROJECT_ENVIRONMENT`/`UV_LINK_MODE`
-      workaround. Still TODO inside `CLAUDE.md`: the "Testing the Server" block references
-      `src/yahoo_finance_mcp/server.py` — that path does not exist; should be `src/server.py`.
-      (Tracked separately as the P4 `CLAUDE.md` fix bullet.)
-- [ ] **`src/__init__.py` re-exports `main` from `server`** even though `src/` is not an
-      installable package (the installed top-levels per egg-info are `server, utils, models,
-      tools`, not `src`). Either remove the file or restructure under a real package name.
+      `.scratch/<feature>/0001-*.md` (untracked) with `Status: accepted`, **byte-identical
+      to the deleted-in-HEAD versions**. Plan for next loop: `git checkout HEAD -- docs/adr/`
+      to restore (since HEAD already tracks the canonical content), then delete the
+      `.scratch/` copies and update the README + tool docstrings in
+      `src/tools/insiders.py:17` and `src/tools/calendars.py:18` to point to `docs/adr/`.
+      Pick that direction because `docs/agents/domain.md` already names `docs/adr/` as the
+      ADR location and the ADR-in-`docs/adr/` convention is well established.
+- [x] **`AGENTS.md` exists** at the project root.
+- [x] **`src/__init__.py` re-exports `main` from `server`** — **Resolved** — file deleted.
+      Confirmed unreachable: nothing did `import src`, and the editable install only puts
+      `/src` on `sys.path`, never `/d/mcp/yfinance-mcp`.
 
 ---
 
 ## P4 — Packaging / environment hygiene
 
-- [ ] `pyproject.toml:31-35` uses the deprecated `tool.uv.dev-dependencies` table — uv
-      already emits a warning on every `uv run`. Migrate to `dependency-groups.dev`.
-- [ ] `pyproject.toml` declares both `py-modules = ["server", "utils", "models"]` and
-      `[tool.setuptools.packages.find] where = ["src"]`. The combination is fragile; the
-      `tools` subpackage is only picked up by the `packages.find` half. Either declare an
-      explicit `packages = ["tools"]` alongside `py-modules`, or restructure into a single
-      `yahoo_finance_mcp` package so there's one rule. Verify against the egg-info SOURCES
-      list (`src/yahoo_finance_mcp.egg-info/SOURCES.txt`) after changes.
-- [ ] `CLAUDE.md` "Testing the Server" block references
-      `src/yahoo_finance_mcp/server.py` — that path does not exist. Update to `src/server.py`
-      (matches the installed package layout).
+- [x] `pyproject.toml` `tool.uv.dev-dependencies` → `[dependency-groups] dev`. **Resolved**
+      — `uv run` no longer emits the deprecation warning.
+- [x] `pyproject.toml` packaging duality. **Resolved** — replaced `[tool.setuptools.packages.find]`
+      with an explicit `package-dir = {"" = "src"}`, `py-modules = ["server", "utils"]`,
+      `packages = ["tools"]`. Single rule, no implicit discovery.
+- [x] `CLAUDE.md` `src/yahoo_finance_mcp/server.py` → `src/server.py`. **Resolved** — and
+      the equivalent README block (`uv run mcp dev …`) and the `Project Structure` tree.
 - [ ] Document a `uv sync` step that produces a working venv on this Linux sandbox. The
       Windows-style venv at `.venv/Lib/site-packages/` shipped in the repo cannot be used
       from the Linux build agent; the first `uv run` rebuild may fail mid-symlink and leave
       `.venv/bin/` empty. Capture the working incantation in `AGENTS.md`.
-      **Workaround discovered during P0** (now persisted in `/etc/sandbox-persistent.sh`):
-      the Linux sandbox at `/d/mcp/yfinance-mcp` cannot create symlinks, so `uv sync` fails
-      with `Operation not permitted (os error 1)` when symlinking the python binary into a
-      project-local `.venv/`. Setting `UV_PROJECT_ENVIRONMENT=/home/agent/yfinance-venv` and
-      `UV_LINK_MODE=copy` makes `uv sync` succeed. Note also that `pytest` cannot create
-      `.pytest_cache` in the project dir (`Permission denied`) — emits a warning but tests
-      still pass. Link this into `AGENTS.md` once that file exists at repo root.
+      **Workaround discovered during P0** (now persisted in `/etc/sandbox-persistent.sh`
+      *and* `AGENTS.md`): the Linux sandbox at `/d/mcp/yfinance-mcp` cannot create symlinks,
+      so `uv sync` fails with `Operation not permitted (os error 1)` when symlinking the
+      python binary into a project-local `.venv/`. Setting
+      `UV_PROJECT_ENVIRONMENT=/home/agent/yfinance-venv` and `UV_LINK_MODE=copy` makes
+      `uv sync` succeed. Note also that `pytest` cannot create `.pytest_cache` in the project
+      dir (`Permission denied`) — emits a warning but tests still pass.
 
 ---
 
@@ -128,6 +117,23 @@ dead or duplicated code violate that.
 ## Completed
 
 Tracking section. Move bullets here with the commit SHA once the build loop closes them out.
+
+- **P3 + P4 — single-source-of-truth cleanup** — commit `TBD` (tag `TBD`).
+  Deleted the orphan `src/models.py` (zero importers across `src/`, `tests/`, docs — verified
+  by parallel-subagent grep) and the unreachable `src/__init__.py` (editable install only
+  puts `/src` on `sys.path`, so the file was never loadable). Rewrote `pyproject.toml`
+  packaging to a single explicit rule — `package-dir = {"" = "src"}`,
+  `py-modules = ["server", "utils"]`, `packages = ["tools"]` — replacing the fragile
+  `py-modules` + `packages.find` combo. Migrated `[tool.uv] dev-dependencies` →
+  `[dependency-groups] dev` (PEP 735), killing the per-run uv deprecation warning. Fixed
+  three stale `src/yahoo_finance_mcp/server.py` and `yahoo_finance_mcp` references in
+  `CLAUDE.md` (Testing the Server / coverage flag / import smoke test) and one in `README.md`
+  (`uv run mcp dev …`). Rewrote the `README.md` *Project Structure* tree to match reality
+  (no `yahoo_finance_mcp/` subdir, includes new `insiders.py` and `calendars.py` modules, adds
+  `docs/adr/`). `uv sync` regenerated the egg-info — `top_level.txt` now correctly lists only
+  `server, tools, utils`. **386 tests still pass** (no regressions). Importance: this collapses
+  the project to one packaging rule and one truth source per concern, so future feature work
+  doesn't need to ask "which list is authoritative."
 
 - **P2 — Test suite backfill** — commit `d4e85a1` (tag `0.0.3`). Nine new test files added on top of the
   P0/P1 modules (test_insiders, test_calendars), bringing the suite to **386 passing tests**
