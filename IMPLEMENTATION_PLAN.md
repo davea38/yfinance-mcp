@@ -22,45 +22,27 @@ below for the rollup entry.
 
 ---
 
-## P1 — Market calendar tooling (`src/tools/calendars.py`) — **spec blocked**
+## P1 — Market calendar tooling (`src/tools/calendars.py`)
 
-Spec: `.scratch/market-vs-company-calendar/0001-market-vs-company-calendar.md`
-Glossary: `CONTEXT.md` — *Company Calendar* (existing) vs *Market Calendar* (new).
+**Done.** All four tools implemented in `src/tools/calendars.py`, registered
+in `src/server.py` (server now exposes 36 tools), covered by 37 passing tests
+in `tests/test_calendars.py`, and documented in `README.md`. See the
+Completed section for the rollup.
 
-**Blocker — confirmed.** The spec assumes a `yfinance.Calendars` class with
-`.get_earnings_calendar(...)`, `.get_ipo_calendar(...)`, `.get_splits_calendar(...)`,
-`.get_economic_calendar(...)` methods. Re-verified against the currently installed
-**yfinance 0.2.66** (via `dir(yfinance)` during the P0 build): **no `Calendars` symbol
-and no `*_calendar` method anywhere**. The public exports are `download, Market, Search,
-Lookup, Ticker, Tickers, Sector, Industry, WebSocket, AsyncWebSocket, EquityQuery,
-FundQuery, screen, …` — none of these surface a market-wide calendar. **Option (a) below
-is dead** until/unless a future yfinance release ships `Calendars`; the next loop should
-pursue option (b).
+**Blocker resolution note for future loops:** the prior plan claimed Option
+(a) (bumping `yfinance`) was dead because the installed 0.2.66 didn't ship
+`Calendars`. That was a stale-dependency artefact — `yfinance` 1.3.0 on PyPI
+(latest at the time of this build) ships `yfinance/calendars.py` with the
+`Calendars` class and `__init__.py` re-exports it. Lesson: always check the
+*upstream* release, not the locally pinned version, before declaring a spec
+blocked on a missing API.
 
-Action plan, in order:
-
-- [ ] **Resolve the dependency claim first.** Option (a) — bumping `yfinance>=…` to a release
-      that exposes `Calendars` — is **dead as of yfinance 0.2.66** (no such symbol exists
-      upstream). The next loop must pursue option (b): either rewrite the spec at
-      `.scratch/market-vs-company-calendar/0001-market-vs-company-calendar.md` to reflect a
-      revised data source, or implement the four tools via direct HTTP against the public
-      `query1.finance.yahoo.com` calendar endpoints inside this module.
-- [ ] **If (a):** create `src/tools/calendars.py` with the four `get_market_*_calendar` tools
-      per spec — `days: int = 7` forward-only window, self-describing envelope
-      `{event_type, days, start_date, end_date, count, events}`. The earnings tool takes the
-      extra `market_cap`, `filter_most_active=True`, `limit=50` parameters; the other three
-      take only `days`. Register each in `server.py` with `get_market_*` names — the
-      `market_` prefix is load-bearing per the ADR ("Considered and rejected: No `market_`
-      prefix").
-- [ ] **If (b):** update the spec at
-      `.scratch/market-vs-company-calendar/0001-market-vs-company-calendar.md` to reflect the
-      revised data source (direct HTTP, or a different upstream library) and re-decide the
-      tool surface. Use an Opus subagent with ultrathink as the build prompt directs.
-- [ ] Either way, do **not** rename or alter `get_calendar(ticker)` in `analysis.py` — the
-      ADR explicitly rejects renaming it to `get_company_calendar` to avoid a breaking
-      change for existing clients.
-- [ ] Tests in `tests/test_calendars.py` once the source is settled.
-- [ ] README update under a new "Market Calendars" section.
+**Naming caveat persisted in code:** the spec's tool surface uses
+`get_market_ipo_calendar` and `get_market_economic_calendar`, but the
+underlying yfinance method names are `get_ipo_info_calendar` /
+`get_economic_events_calendar`. The wrappers in `calendars.py` translate.
+Don't "fix" the spec names — the `market_` prefix is load-bearing per the
+ADR and the suffixes are also part of the documented contract.
 
 ---
 
@@ -72,15 +54,15 @@ the server wiring. Build PROMPT requires test runs after each increment.
 - [x] Add `tests/conftest.py` with shared fixtures — a `stub_ticker_factory` fixture is in
       place that patches `yfinance.Ticker` per-module so tests don't hit the network.
 - [x] One `tests/test_<module>.py` per existing tool module covering the happy path and the
-      `error: True` branch — **`tests/test_insiders.py` DONE (16 tests)**. Still pending for
-      the rest: `calendars` (blocked on P1), then back-fill `stock_info`, `historical`,
-      `financials`, `analysis`, `options`, `news`, `bulk`.
+      `error: True` branch — **`tests/test_insiders.py` DONE (16 tests)** and
+      **`tests/test_calendars.py` DONE (37 tests)**. Still pending: back-fill
+      `stock_info`, `historical`, `financials`, `analysis`, `options`, `news`, `bulk`.
 - [ ] `tests/test_utils.py` — `format_dataframe_to_dict` (NaN, Timestamps, numpy scalars),
       `format_series_to_dict`, `validate_ticker_symbol`, `validate_period`,
       `validate_interval`, `handle_yfinance_error` shape.
 - [ ] `tests/test_server.py` — assert every registered `@mcp.tool()` name from the spec is
-      present, descriptions are non-empty, and that the README tool count (now **32** after
-      P0) matches the registration count post-feature work.
+      present, descriptions are non-empty, and that the README tool count (now **36** after
+      P0 + P1) matches the registration count post-feature work.
 - [ ] Wire `uv run pytest` into the build-loop tag step (PROMPT_build.md item 9999999).
 
 ---
@@ -161,6 +143,31 @@ dead or duplicated code violate that.
 ## Completed
 
 Tracking section. Move bullets here with the commit SHA once the build loop closes them out.
+
+- **P1 — Market calendar tooling (`src/tools/calendars.py`)** — commit `TBD`.
+  All four `get_market_*_calendar` tools implemented:
+  `get_market_earnings_calendar(days, market_cap, filter_most_active, limit)`,
+  `get_market_ipo_calendar(days)`, `get_market_splits_calendar(days)`,
+  `get_market_economic_calendar(days)`. Each returns the self-describing
+  envelope `{event_type, days, start_date, end_date, count, events}` over a
+  forward-only window from today. Earnings tool defaults
+  `filter_most_active=True`, `limit=50` (capped at YF's max of 100). All four
+  registered as `@mcp.tool()` wrappers in `src/server.py` (server now exposes
+  **36 tools**). 37 tests added in `tests/test_calendars.py` covering: envelope
+  shape, default `days=7`, that the earnings tool forwards
+  `market_cap`/`filter_most_active`/`limit` verbatim, that the `Calendars`
+  instance is constructed with today / today+days, that limit is capped at
+  100, error responses omit the `ticker` field (market calendars aren't
+  ticker-scoped), validation of `days` / `limit` / `market_cap` /
+  `filter_most_active`, the IPO/splits/economic wrappers call the correct
+  yfinance methods (`get_ipo_info_calendar` / `get_economic_events_calendar` —
+  not the spec-surface names), the IPO/splits/economic signatures expose
+  only `days` (no parameter creep), and that `server.py` actually registers
+  all four wrappers. yfinance bumped `>=0.2.49` → `>=1.3.0` in
+  `pyproject.toml` (and the `FastMCP(dependencies=...)` declaration in
+  `server.py`). README bumped 32 → 36 tools with a new "Market Calendars (4
+  Tools)" details block + usage section explaining the per-ticker vs
+  market-wide split.
 
 - **P0 — Insider tooling (`src/tools/insiders.py`)** — commit `TBD`. All four tools
   implemented: `get_insider_transactions`, `get_insider_purchases`,

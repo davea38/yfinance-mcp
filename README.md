@@ -4,7 +4,7 @@ A comprehensive Model Context Protocol (MCP) server that provides access to Yaho
 
 ## Features
 
-This MCP server provides **32 tools** organized into 8 categories:
+This MCP server provides **36 tools** organized into 9 categories:
 <details>
 <summary><b>Stock Information (6 Tools)</b></summary>
 <ul>
@@ -124,6 +124,31 @@ This MCP server provides **32 tools** organized into 8 categories:
     <strong>get_outsized_insider_transactions</strong> – Trades ranked by their proportional impact on each insider's stake; full exits surface in a separate <code>full_liquidations</code> bucket
   </li>
 </ul>
+</details>
+
+<details>
+<summary><b>Market Calendars (4 Tools)</b></summary>
+<ul>
+  <li>
+    <strong>get_market_earnings_calendar</strong> – Market-wide upcoming earnings releases; optional <code>market_cap</code> floor, <code>filter_most_active</code>, <code>limit</code> (Yahoo cap 100)
+  </li>
+  <li>
+    <strong>get_market_ipo_calendar</strong> – Market-wide upcoming IPO filings/listings
+  </li>
+  <li>
+    <strong>get_market_splits_calendar</strong> – Market-wide upcoming stock-split events
+  </li>
+  <li>
+    <strong>get_market_economic_calendar</strong> – Market-wide scheduled macro releases (CPI, jobs, central-bank events)
+  </li>
+</ul>
+<p>
+These four <strong>market-wide</strong> tools are deliberately separate from the per-ticker
+<code>get_calendar</code> above — Yahoo overloads the word "calendar" with two
+unrelated APIs (one company's events vs. a market-wide stream). The <code>market_</code>
+prefix signals the scope split to LLM clients; see the ADR at
+<code>.scratch/market-vs-company-calendar/0001-market-vs-company-calendar.md</code>.
+</p>
 </details>
 
 <details>
@@ -294,6 +319,26 @@ get_news(ticker="TSLA", limit=10)
 
 # Get analyst upgrades/downgrades
 get_upgrades_downgrades(ticker="NVDA")
+```
+
+### Market Calendars
+
+```python
+# Market-wide upcoming earnings (next 7 days, most-active only by default)
+get_market_earnings_calendar(days=7)
+
+# Restrict to $10B+ market cap, no most-active filter, up to 100 rows
+get_market_earnings_calendar(
+    days=14,
+    market_cap=10_000_000_000,
+    filter_most_active=False,
+    limit=100,
+)
+
+# Other three streams take only `days`
+get_market_ipo_calendar(days=30)
+get_market_splits_calendar(days=30)
+get_market_economic_calendar(days=7)
 ```
 
 ### Insider Activity

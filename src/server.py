@@ -14,10 +14,20 @@ from mcp.server.fastmcp import FastMCP
 from typing import Any, Dict, List, Optional
 
 # Import tool implementations
-from tools import stock_info, historical, financials, analysis, options, news, bulk, insiders
+from tools import (
+    stock_info,
+    historical,
+    financials,
+    analysis,
+    options,
+    news,
+    bulk,
+    insiders,
+    calendars,
+)
 
 # Initialize FastMCP server
-mcp = FastMCP("yahoo-finance", dependencies=["yfinance>=0.2.49"])
+mcp = FastMCP("yahoo-finance", dependencies=["yfinance>=1.3.0"])
 
 
 # Register stock information tools
@@ -210,6 +220,38 @@ def get_outsized_insider_transactions(
 ) -> Dict[str, Any]:
     """Rank recent insider trades by their proportional impact on each insider's stake; full exits are returned in a separate full_liquidations bucket. sort='proportional' (default) ranks by shares_transacted/insider_current_holdings; sort='value' ranks by raw dollar value."""
     return insiders.get_outsized_insider_transactions(ticker, lookback_days, top_n, sort)
+
+
+# Register market-wide calendar tools (separate from per-ticker get_calendar)
+@mcp.tool()
+def get_market_earnings_calendar(
+    days: int = 7,
+    market_cap: Optional[float] = None,
+    filter_most_active: bool = True,
+    limit: int = 50,
+) -> Dict[str, Any]:
+    """Market-wide upcoming earnings releases over the next `days`. Optional market_cap floor (USD); filter_most_active restricts to Yahoo's most-active tickers; limit caps results (Yahoo cap 100)."""
+    return calendars.get_market_earnings_calendar(
+        days, market_cap, filter_most_active, limit
+    )
+
+
+@mcp.tool()
+def get_market_ipo_calendar(days: int = 7) -> Dict[str, Any]:
+    """Market-wide upcoming IPO filings/listings over the next `days`."""
+    return calendars.get_market_ipo_calendar(days)
+
+
+@mcp.tool()
+def get_market_splits_calendar(days: int = 7) -> Dict[str, Any]:
+    """Market-wide upcoming stock splits over the next `days`."""
+    return calendars.get_market_splits_calendar(days)
+
+
+@mcp.tool()
+def get_market_economic_calendar(days: int = 7) -> Dict[str, Any]:
+    """Market-wide upcoming economic events (CPI, jobs, central-bank releases) over the next `days`."""
+    return calendars.get_market_economic_calendar(days)
 
 
 # Register bulk operation tools
