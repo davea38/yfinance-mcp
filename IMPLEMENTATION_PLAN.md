@@ -114,7 +114,7 @@ The build PROMPT mandates *"Single sources of truth, no migrations/adapters."*
 
 Tracking section. Move bullets here with the commit SHA once the build loop closes them out.
 
-- **P3 + P4 — ADR location collapse + venv setup doc** — commit `TBD` (tag `0.0.5`).
+- **P3 + P4 — ADR location collapse + venv setup doc** — commit `fbf21af` (tag `0.0.5`).
   Closed the last two open items: (1) the `.scratch/<feature>/0001-*.md` ↔ `docs/adr/000{1,2}-*.md`
   duality, by updating every tracked reference (tool-module docstrings in `src/tools/insiders.py`
   and `src/tools/calendars.py`, the test-file rationale block in `tests/test_calendars.py`, and
