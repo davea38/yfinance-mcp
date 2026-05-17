@@ -155,6 +155,23 @@ land silently.
 
 Tracking section. Move bullets here with the commit SHA once the build loop closes them out.
 
+- **P5 — Polish (post-spec quality)** — commit `6a5a46f` (tag `0.0.6`). Two
+  determinism / coverage gaps surfaced by a spec-vs-implementation review:
+  (1) `full_liquidations` was returned in pandas iteration order, so the
+  bucket the spec frames as "the loudest possible signal" could land in
+  front of the LLM in a non-deterministic order on every call; now sorted
+  by date desc, then `abs(value)` desc as tiebreaker, regression-locked by
+  `test_full_liquidations_sorted_by_date_then_value`. (2) The earnings
+  calendar was the only tool with a parametrised `days` validation test and
+  a `test_calendars_constructed_with_window`; IPO, splits and economic now
+  have equivalent coverage, so a regression silently passing a historical
+  window or accepting a non-int `days` can't ship. **400 passing tests**
+  (was 386: +1 insider sort, +5 IPO days, +1 IPO window, +5 splits days,
+  +1 splits window, +1 economic window). Two latent observations
+  (zero-holdings-on-roster routing, tz-naive cutoff vs. potentially
+  tz-aware Yahoo dates) documented under "Open observations" so they
+  aren't lost.
+
 - **P3 + P4 — ADR location collapse + venv setup doc** — commit `fbf21af` (tag `0.0.5`).
   Closed the last two open items: (1) the `.scratch/<feature>/0001-*.md` ↔ `docs/adr/000{1,2}-*.md`
   duality, by updating every tracked reference (tool-module docstrings in `src/tools/insiders.py`
