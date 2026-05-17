@@ -29,3 +29,7 @@ Thumbs.db
 
 # Project specific
 *.log
+
+# Local scratch / agent working dirs
+.scratch/
+.claude/worktrees/
