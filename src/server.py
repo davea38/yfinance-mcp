@@ -14,7 +14,7 @@ from mcp.server.fastmcp import FastMCP
 from typing import Any, Dict, List, Optional
 
 # Import tool implementations
-from tools import stock_info, historical, financials, analysis, options, news, bulk
+from tools import stock_info, historical, financials, analysis, options, news, bulk, insiders
 
 # Initialize FastMCP server
 mcp = FastMCP("yahoo-finance", dependencies=["yfinance>=0.2.49"])
@@ -180,6 +180,36 @@ def get_news(ticker: str, limit: int = 10) -> Dict[str, Any]:
 def get_upgrades_downgrades(ticker: str) -> Dict[str, Any]:
     """Get analyst upgrades and downgrades history."""
     return news.get_upgrades_downgrades(ticker)
+
+
+# Register insider activity tools
+@mcp.tool()
+def get_insider_transactions(ticker: str) -> Dict[str, Any]:
+    """Get the raw log of recent insider buy/sell trades reported on Form 4."""
+    return insiders.get_insider_transactions(ticker)
+
+
+@mcp.tool()
+def get_insider_purchases(ticker: str) -> Dict[str, Any]:
+    """Get Yahoo's aggregate 6-month insider purchases/sales summary (totals, not individual trades)."""
+    return insiders.get_insider_purchases(ticker)
+
+
+@mcp.tool()
+def get_insider_roster_holders(ticker: str) -> Dict[str, Any]:
+    """Get the current snapshot of insiders and how many shares each holds directly."""
+    return insiders.get_insider_roster_holders(ticker)
+
+
+@mcp.tool()
+def get_outsized_insider_transactions(
+    ticker: str,
+    lookback_days: int = 180,
+    top_n: int = 10,
+    sort: str = "proportional",
+) -> Dict[str, Any]:
+    """Rank recent insider trades by their proportional impact on each insider's stake; full exits are returned in a separate full_liquidations bucket. sort='proportional' (default) ranks by shares_transacted/insider_current_holdings; sort='value' ranks by raw dollar value."""
+    return insiders.get_outsized_insider_transactions(ticker, lookback_days, top_n, sort)
 
 
 # Register bulk operation tools

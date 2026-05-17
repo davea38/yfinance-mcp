@@ -4,7 +4,7 @@ A comprehensive Model Context Protocol (MCP) server that provides access to Yaho
 
 ## Features
 
-This MCP server provides **30 tools** organized into 7 categories:
+This MCP server provides **32 tools** organized into 8 categories:
 <details>
 <summary><b>Stock Information (6 Tools)</b></summary>
 <ul>
@@ -104,6 +104,24 @@ This MCP server provides **30 tools** organized into 7 categories:
   </li>
   <li>
     <strong>get_puts</strong> – Put options data
+  </li>
+</ul>
+</details>
+
+<details>
+<summary><b>Insider Activity (4 Tools)</b></summary>
+<ul>
+  <li>
+    <strong>get_insider_transactions</strong> – Raw per-trade log of Form 4 insider buys/sells
+  </li>
+  <li>
+    <strong>get_insider_purchases</strong> – Yahoo's aggregate 6-month purchases/sales summary
+  </li>
+  <li>
+    <strong>get_insider_roster_holders</strong> – Current snapshot of insider holdings
+  </li>
+  <li>
+    <strong>get_outsized_insider_transactions</strong> – Trades ranked by their proportional impact on each insider's stake; full exits surface in a separate <code>full_liquidations</code> bucket
   </li>
 </ul>
 </details>
@@ -276,6 +294,28 @@ get_news(ticker="TSLA", limit=10)
 
 # Get analyst upgrades/downgrades
 get_upgrades_downgrades(ticker="NVDA")
+```
+
+### Insider Activity
+
+```python
+# Raw per-trade log
+get_insider_transactions(ticker="AAPL")
+
+# Yahoo's aggregate 6-month buy/sell summary (not a trade list)
+get_insider_purchases(ticker="AAPL")
+
+# Current snapshot of who holds insider shares
+get_insider_roster_holders(ticker="AAPL")
+
+# Rank trades by proportional impact on each insider's own stake.
+# Default 180-day window, top 10. Full exits land in a separate bucket.
+get_outsized_insider_transactions(
+    ticker="AAPL",
+    lookback_days=180,
+    top_n=10,
+    sort="proportional",  # or "value" for raw $ ranking
+)
 ```
 
 ### Bulk Operations
