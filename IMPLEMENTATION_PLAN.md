@@ -118,7 +118,7 @@ The build PROMPT mandates *"Single sources of truth, no migrations/adapters."*
 
 Tracking section. Move bullets here with the commit SHA once the build loop closes them out.
 
-- **P3 + P4 — single-source-of-truth cleanup** — commit `TBD` (tag `TBD`).
+- **P3 + P4 — single-source-of-truth cleanup** — commit `2e315d2` (tag `0.0.4`).
   Deleted the orphan `src/models.py` (zero importers across `src/`, `tests/`, docs — verified
   by parallel-subagent grep) and the unreachable `src/__init__.py` (editable install only
   puts `/src` on `sys.path`, so the file was never loadable). Rewrote `pyproject.toml`
