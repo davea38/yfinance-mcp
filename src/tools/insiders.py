@@ -14,8 +14,7 @@ Four tools live in this module:
   insider's own stake). Rows whose actor is absent from the roster (i.e. they
   fully exited the position) are surfaced in a separate ``full_liquidations``
   bucket rather than mixed into the ranked list — see the ADR at
-  ``.scratch/outsized-insider-transactions-ranking/0001-outsized-insider-transactions-ranking.md``
-  for the reasoning.
+  ``docs/adr/0001-outsized-insider-transactions-ranking.md`` for the reasoning.
 """
 
 from datetime import datetime, timedelta, timezone

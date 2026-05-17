@@ -15,7 +15,7 @@ Why these are *separate* from ``get_calendar(ticker)`` in ``analysis.py``
 dates — a **per-ticker** view. ``yfinance.Calendars`` (plural) is a different
 data source entirely: a **market-wide** stream of four disjoint event types
 over a forward date window. The ADR at
-``.scratch/market-vs-company-calendar/0001-market-vs-company-calendar.md``
+``docs/adr/0002-market-vs-company-calendar.md``
 captures the decision to expose the market-wide view as four tools (not one
 polymorphic tool with an ``event_type`` enum, not one tool returning all four
 buckets) and to prefix them with ``get_market_`` so an LLM client can't

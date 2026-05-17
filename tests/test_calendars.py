@@ -6,7 +6,7 @@ Why these tests exist
 The four market-calendar tools are the public, market-wide counterpart to the
 per-ticker ``get_calendar`` in ``analysis.py``. Their *envelope shape* and
 *tool naming* are load-bearing — both encode decisions from the ADR at
-``.scratch/market-vs-company-calendar/0001-market-vs-company-calendar.md``:
+``docs/adr/0002-market-vs-company-calendar.md``:
 
 * The ``event_type`` field labels each response so an LLM can tell the four
   streams apart without inspecting columns. Renaming or dropping it would

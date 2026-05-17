@@ -64,16 +64,15 @@ The build PROMPT mandates *"Single sources of truth, no migrations/adapters."*
       no longer mention `models`.
 - [x] **Period/interval validation duplicated.** **Resolved** — only duplicate site was
       `models.py`, removed above.
-- [ ] **`docs/adr/` is empty; ADRs sit in `.scratch/`.** Git status shows
-      `D docs/adr/0001-outsized-insider-transactions-ranking.md` and
-      `D docs/adr/0002-market-vs-company-calendar.md` — both files are present at
-      `.scratch/<feature>/0001-*.md` (untracked) with `Status: accepted`, **byte-identical
-      to the deleted-in-HEAD versions**. Plan for next loop: `git checkout HEAD -- docs/adr/`
-      to restore (since HEAD already tracks the canonical content), then delete the
-      `.scratch/` copies and update the README + tool docstrings in
-      `src/tools/insiders.py:17` and `src/tools/calendars.py:18` to point to `docs/adr/`.
-      Pick that direction because `docs/agents/domain.md` already names `docs/adr/` as the
-      ADR location and the ADR-in-`docs/adr/` convention is well established.
+- [x] **ADR canonical location is `docs/adr/`, not `.scratch/`.** **Resolved** — both
+      ADRs are restored and tracked at `docs/adr/0001-outsized-insider-transactions-ranking.md`
+      and `docs/adr/0002-market-vs-company-calendar.md`. All tracked references in source,
+      tests, and README now point at `docs/adr/` (was `.scratch/<feature>/0001-*.md`):
+      `src/tools/insiders.py:16`, `src/tools/calendars.py:17-18`, `tests/test_calendars.py:8-9`,
+      `README.md:149-150`. The `.scratch/` working copies are left in place as untracked working
+      state for the build loop's spec-input step (per `docs/agents/issue-tracker.md`, `.scratch/`
+      is the PRD/issues area). They are byte-identical to the tracked ADRs, so no drift is
+      possible — and they're outside git, so they can't become a competing source of truth.
 - [x] **`AGENTS.md` exists** at the project root.
 - [x] **`src/__init__.py` re-exports `main` from `server`** — **Resolved** — file deleted.
       Confirmed unreachable: nothing did `import src`, and the editable install only puts
@@ -90,17 +89,14 @@ The build PROMPT mandates *"Single sources of truth, no migrations/adapters."*
       `packages = ["tools"]`. Single rule, no implicit discovery.
 - [x] `CLAUDE.md` `src/yahoo_finance_mcp/server.py` → `src/server.py`. **Resolved** — and
       the equivalent README block (`uv run mcp dev …`) and the `Project Structure` tree.
-- [ ] Document a `uv sync` step that produces a working venv on this Linux sandbox. The
-      Windows-style venv at `.venv/Lib/site-packages/` shipped in the repo cannot be used
-      from the Linux build agent; the first `uv run` rebuild may fail mid-symlink and leave
-      `.venv/bin/` empty. Capture the working incantation in `AGENTS.md`.
-      **Workaround discovered during P0** (now persisted in `/etc/sandbox-persistent.sh`
-      *and* `AGENTS.md`): the Linux sandbox at `/d/mcp/yfinance-mcp` cannot create symlinks,
-      so `uv sync` fails with `Operation not permitted (os error 1)` when symlinking the
-      python binary into a project-local `.venv/`. Setting
-      `UV_PROJECT_ENVIRONMENT=/home/agent/yfinance-venv` and `UV_LINK_MODE=copy` makes
-      `uv sync` succeed. Note also that `pytest` cannot create `.pytest_cache` in the project
-      dir (`Permission denied`) — emits a warning but tests still pass.
+- [x] Document a `uv sync` step that produces a working venv on this Linux sandbox.
+      **Resolved** — `AGENTS.md` "Environment setup (Linux sandbox)" section documents the
+      two required exports (`UV_PROJECT_ENVIRONMENT=/home/agent/yfinance-venv`,
+      `UV_LINK_MODE=copy`) and they're persisted in `/etc/sandbox-persistent.sh` so the next
+      shell picks them up. Reason for the workaround: the project dir at `/d/mcp/yfinance-mcp`
+      cannot create symlinks, so `uv sync` fails with `Operation not permitted (os error 1)`
+      placing a project-local `.venv/`. The `pytest` `.pytest_cache` permission-denied warning
+      is also noted as benign in `AGENTS.md`.
 
 ---
 
@@ -117,6 +113,21 @@ The build PROMPT mandates *"Single sources of truth, no migrations/adapters."*
 ## Completed
 
 Tracking section. Move bullets here with the commit SHA once the build loop closes them out.
+
+- **P3 + P4 — ADR location collapse + venv setup doc** — commit `TBD` (tag `0.0.5`).
+  Closed the last two open items: (1) the `.scratch/<feature>/0001-*.md` ↔ `docs/adr/000{1,2}-*.md`
+  duality, by updating every tracked reference (tool-module docstrings in `src/tools/insiders.py`
+  and `src/tools/calendars.py`, the test-file rationale block in `tests/test_calendars.py`, and
+  the README "market calendars" section) to point at `docs/adr/`. The `docs/adr/` files were
+  already restored in the working tree and byte-identical to `.scratch/`, so the cleanup is
+  pure reference-renaming — no content moves. (2) The `uv sync` setup instructions are already
+  documented in `AGENTS.md` and persisted in `/etc/sandbox-persistent.sh`; checkbox flipped to
+  `[x]`. The `.scratch/` working copies are intentionally left in place: per
+  `docs/agents/issue-tracker.md` they're the build loop's PRD/issues area, they're untracked
+  (so can't drift into a competing source of truth), and step 0a of the build prompt reads
+  from them. **386 tests still pass** (no regressions). Importance: closes out the last "two
+  copies of the same fact" the codebase carried, so future work can cite the ADR by its tracked
+  path without ambiguity.
 
 - **P3 + P4 — single-source-of-truth cleanup** — commit `2e315d2` (tag `0.0.4`).
   Deleted the orphan `src/models.py` (zero importers across `src/`, `tests/`, docs — verified

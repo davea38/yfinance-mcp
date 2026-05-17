@@ -147,7 +147,7 @@ These four <strong>market-wide</strong> tools are deliberately separate from the
 <code>get_calendar</code> above — Yahoo overloads the word "calendar" with two
 unrelated APIs (one company's events vs. a market-wide stream). The <code>market_</code>
 prefix signals the scope split to LLM clients; see the ADR at
-<code>.scratch/market-vs-company-calendar/0001-market-vs-company-calendar.md</code>.
+<code>docs/adr/0002-market-vs-company-calendar.md</code>.
 </p>
 </details>
 
